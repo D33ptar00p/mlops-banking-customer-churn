@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # Database for MLflow metadata
+  db:
+    image: postgres:15
+    container_name: mlflow_db
+    environment:
+      - POSTGRES_USER=mlflow
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=mlflow
+    ports:
+      - "5433:5432"
+
+  # MLflow Tracking Server
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: mlflow_server
+    depends_on:
+      - db
+    ports:
+      - "5000:5000"
+    environment:
+      - BACKEND_STORE_URI=postgresql://mlflow:password@db:5432/mlflow
+    #command: >
+    #  mlflow server 
+    #  --backend-store-uri postgresql://mlflow:password@db:5432/mlflow 
+    #  --host 0.0.0.0
+    entrypoint: >
+      sh -c "pip install psycopg2-binary && 
+      mlflow server 
+      --backend-store-uri postgresql://mlflow:password@db:5432/mlflow 
+      --host 0.0.0.0 
+      --allowed-hosts '*'"
+      
+  # Your Prediction API (FastAPI)
+  api:
+    build: .
+    container_name: prediction_api
+    ports:
+      - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    depends_on:
+      - mlflow
