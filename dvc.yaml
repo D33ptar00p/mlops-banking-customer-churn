@@ -1,4 +1,10 @@
 stages:
+  ingest:
+    cmd: python src/ingestion.py
+    deps:
+      - src/ingestion.py
+    outs:
+      - data/raw/train.csv
   preprocess:
     cmd: python src/preprocessing.py
     deps:
@@ -6,6 +12,7 @@ stages:
       - src/preprocessing.py
     outs:
       - data/processed/train.csv
+
   train:
     cmd: python src/train.py
     deps:
