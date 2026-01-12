@@ -3,6 +3,7 @@ import pandas as pd
 import mlflow
 import yaml
 import mlflow.sklearn
+import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -56,6 +57,12 @@ def train():
         
         y_pred = model_pipeline.predict(X_test)
         print(classification_report(y_test, y_pred))
+    
+    # 5. Save the model locally for DVC
+    output_dir = "models"
+    os.makedirs(output_dir, exist_ok=True)
+    joblib.dump(model_pipeline, f"{output_dir}/model.pkl")
+    print(f"✅ Model pipeline saved to {output_dir}/model.pkl")
 
 if __name__ == "__main__":
     train()
