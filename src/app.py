@@ -3,8 +3,33 @@ import mlflow.pyfunc
 import pandas as pd
 import os
 from pydantic import BaseModel
+from prometheus_fastapi_instrumentator import Instrumentator
+import logging
+from prometheus_client import Histogram, Counter
+
+# Setup Logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="MLOps Production API")
+
+# Initializing prometheus monitoring to expore the /metrics endpoint
+Instrumentator().instrument(app).expose(app)
+
+# Defining histogram for specific features
+# Buckets define the ranges we want to observe( e.g age ranges)
+AGE_DISTRIBUTION = Histogram(
+    'input_age_distribution',
+    'Distribution of customer age in requests', 
+    buckets=[18, 25, 35, 45, 55, 65, 100]
+)
+
+# Define a counter or historgram for predictions
+PREDICTION_COUNT = Counter(
+    'model_predtion_total',
+    'Total count of churn vs no-churn predictions',
+    ['outcome']
+)
 
 # Configuration
 MODEL_NAME = "customer-churn-model"
@@ -57,6 +82,14 @@ def health():
 
 @app.post("/predict")
 def predict(data: PredictionInput):
+
+    # Record observations for monitoring
+    AGE_DISTRIBUTION.observe(data.age)
+
     df = pd.DataFrame([data.dict()])
     prediction = model.predict(df)
+
+    # Track teh prediction result
+    PREDICTION_COUNT.labels(outcome=str(int(prediction))).inc()
+
     return {"prediction": int(prediction[0])}
