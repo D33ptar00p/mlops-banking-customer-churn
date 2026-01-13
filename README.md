@@ -10,6 +10,7 @@ This project follows the **MLOps Level 1 maturity model**, ensuring that every m
 * **Data & Pipeline Versioning:** [DVC](https://dvc.org/) orchestrates the entire ML pipeline (ingestion, preprocessing, training) and versions the data and models, ensuring full reproducibility.
 * **Experiment Tracking:** [MLflow](https://mlflow.org/) used for logging metrics, parameters, and model signatures.
 * **Model Serving:** [FastAPI](https://fastapi.tiangolo.com/) microservice wrapped in Docker.
+* **Monitoring & Observability:** **Prometheus** for metrics collection (e.g., API latency, request rates) and **Grafana** for visualization and dashboarding.
 * **Infrastructure:** Multi-container orchestration using **Docker Compose** (PostgreSQL DB, MLflow Server, and API).
 
 ---
@@ -23,12 +24,15 @@ This project follows the **MLOps Level 1 maturity model**, ensuring that every m
 │       └── train.csv   # Cleaned and preprocessed data
 ├── src/
 │   ├── ingestion.py     # Downloads and extracts nested UCI data
-│   ├── preprocessing.py # Cleans features and targets
+│   ├── preprocessing.py # Cleans features and prepares data
 │   ├── train.py         # Pipeline training with MLflow autologging
 │   └── app.py           # FastAPI prediction service
+├── monitoring/
+│   └── prometheus.yml   # Prometheus scrape configurations
 ├── docker-compose.yml   # Orchestrates the full stack
 ├── Dockerfile           # Defines the production build for the API
 ├── dvc.yaml             # Defines the DVC pipeline stages (ingest, preprocess, train)
+├── requirements.txt     # Python dependencies
 └── params.yaml          # Centralized hyperparameters
 ```
 
@@ -75,6 +79,10 @@ docker-compose up -d --build
 🟢 MLflow Tracking UI: http://localhost:5000
 
 🔵 API Documentation: http://localhost:8000/docs
+
+🟡 Grafana Dashboards: http://localhost:3000 (Default login: `admin`/`admin`)
+
+⚫ Prometheus Targets: http://localhost:9090
 
 ## Execute the Full ML Pipeline (DVC)
 Use a single DVC command to run the entire pipeline: data ingestion, preprocessing, and model training. DVC automatically checks dependencies and runs only the necessary stages.
@@ -126,3 +134,50 @@ curl -X 'POST' 'http://localhost:8000/predict' \
   "cons_price_idx": 93.444, "cons_conf_idx": -36.1, "euribor3m": 4.963, "nr_employed": 5228.1
 }'
 ```
+
+# 📈 Observability & ML Monitoring
+
+This project implements a comprehensive observability stack using **Prometheus** and **Grafana** to monitor both the **REST API (Operational Health)** and the **Machine Learning Model (Data & Prediction Health)**.
+
+---
+
+## 🏗️ Monitoring Architecture
+
+
+
+1.  **FastAPI (The Exporter):** Uses `prometheus-fastapi-instrumentator` to expose a `/metrics` endpoint.
+2.  **Prometheus (The Collector):** Periodically "scrapes" the API for metrics and stores them in a time-series database.
+3.  **Grafana (The Visualizer):** Connects to Prometheus to display real-time dashboards and trigger alerts.
+
+---
+
+## 🔍 What are we monitoring?
+
+### 1. API Operational Health (The "Golden Signals")
+We track the stability and performance of the prediction service:
+* **Request Volume (RPS):** Total requests per second hitting the `/predict` endpoint.
+* **Latency (P95/P99):** Time taken to process a prediction. Crucial for detecting if the model becomes too slow under load.
+* **Error Rates:** Monitoring `4xx` (bad data) and `5xx` (server crash) status codes.
+
+### 2. ML Model Monitoring
+This section is unique to MLOps and focuses on detecting **Data Drift** and **Model Performance**:
+* **Prediction Distribution:** A bar chart/pie chart showing the ratio of `0` (No Churn) vs `1` (Churn) predictions. 
+    > *Insight: If the model suddenly predicts 100% "Churn", we may have Model Drift.*
+* **Feature Distribution (Age/Duration):** Histograms of incoming feature values.
+    > *Insight: If the average customer age in production is 60, but the model was trained on age 25, we have Data Drift.*
+* **Model Loading Status:** Tracks if the API is successfully pulling the `@production` model from the MLflow registry.
+
+---
+
+## 🛠️ Accessing the Dashboards
+
+Once your Docker containers are running (`docker-compose up -d`), you can access the monitoring suite at:
+
+| Service | URL | Purpose |
+| :--- | :--- | :--- |
+| **Prometheus** | `http://localhost:9090` | Query raw metrics using PromQL |
+| **Grafana** | `http://localhost:3000` | View real-time visual dashboards |
+| **API Metrics** | `http://localhost:8000/metrics` | Raw data being exposed by the API |
+
+**Default Grafana Credentials:** `admin` / `admin`
+

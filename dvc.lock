@@ -1,0 +1,50 @@
+schema: '2.0'
+stages:
+  ingest:
+    cmd: python src/ingestion.py
+    deps:
+    - path: src/ingestion.py
+      hash: md5
+      md5: ea9e0a036ee2530976a6de1296a5b0ce
+      size: 1539
+    outs:
+    - path: data/raw/train.csv
+      hash: md5
+      md5: df42fbb5579c5a37e5640ded12178933
+      size: 4912041
+  preprocess:
+    cmd: python src/preprocessing.py
+    deps:
+    - path: data/raw/train.csv
+      hash: md5
+      md5: df42fbb5579c5a37e5640ded12178933
+      size: 4912041
+    - path: src/preprocessing.py
+      hash: md5
+      md5: cf682fe165e9f65e83ee4dd8bdd8d287
+      size: 755
+    outs:
+    - path: data/processed/train.csv
+      hash: md5
+      md5: d79a8344c9d8546106e16053ca96cded
+      size: 4866213
+  train:
+    cmd: python src/train.py
+    deps:
+    - path: data/processed/train.csv
+      hash: md5
+      md5: d79a8344c9d8546106e16053ca96cded
+      size: 4866213
+    - path: src/train.py
+      hash: md5
+      md5: 45a0123483304790c73ca30b5e73143d
+      size: 2389
+    params:
+      params.yaml:
+        train.max_depth: 5
+        train.n_estimators: 10
+    outs:
+    - path: models/model.pkl
+      hash: md5
+      md5: c2b05b2a8b2254e7e241d0c0c6da91ab
+      size: 59974
