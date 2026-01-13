@@ -32,7 +32,29 @@ services:
       --backend-store-uri postgresql://mlflow:password@db:5432/mlflow 
       --host 0.0.0.0 
       --allowed-hosts '*'"
-      
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    restart: always
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin #Default login: admin/admin
+    restart: always
+    depends_on:
+      - prometheus    
+
   # Your Prediction API (FastAPI)
   api:
     build: .
