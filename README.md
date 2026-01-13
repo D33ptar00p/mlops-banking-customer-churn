@@ -181,3 +181,14 @@ Once your Docker containers are running (`docker-compose up -d`), you can access
 
 **Default Grafana Credentials:** `admin` / `admin`
 
+---
+## 🧪 Running the Smoke Test
+A smoke test script (`tests/smoke_test.py`) is provided to simulate traffic to the API and generate metrics for visualization.
+
+To run the smoke test, execute:
+
+```bash
+python tests/smoke_test.py
+```
+---
+
