@@ -181,6 +181,11 @@ Once your Docker containers are running (`docker-compose up -d`), you can access
 
 **Default Grafana Credentials:** `admin` / `admin`
 
+The default datasource added to Grafana is Promethues through the `datasource.yml` file.
+Two dashboards are added:
+* **FastAPI Observability:** For observing performance of the API
+* **ML Dashboard:** For MLOps Observability like prediction distribution, input distribution which could help with drift detection
+
 ---
 ## 🧪 Running the Smoke Test
 A smoke test script (`tests/smoke_test.py`) is provided to simulate traffic to the API and generate metrics for visualization.
@@ -189,6 +194,12 @@ To run the smoke test, execute:
 
 ```bash
 python tests/smoke_test.py
+```
+
+To generate data continuosly:
+
+```bash
+while true; do python tests/smoke_test.py; sleep 60; done
 ```
 ---
 
